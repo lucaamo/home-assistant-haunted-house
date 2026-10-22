@@ -1,0 +1,293 @@
+# Standalone dashboard configuration: one view, built-in cards only.
+# Install the Haunted House core package first. Add room automations via the blueprint.
+# When adding this view to an existing dashboard, copy only the item under views.
+title: Haunted House
+views:
+  - title: Haunted House
+    path: haunted-house
+    icon: mdi:halloween
+    type: sections
+    max_columns: 3
+    header:
+      layout: responsive
+      badges_position: bottom
+      card:
+        type: markdown
+        text_only: true
+        content: |
+          # 🎃 Haunted House
+          Presence-triggered sounds. Optional light effects. Your rooms, your speakers.
+    badges:
+      - type: entity
+        entity: input_boolean.haunted_house_enabled
+        name: Armed
+        show_name: true
+        show_state: true
+        color: orange
+      - type: entity
+        entity: counter.haunted_house_effects
+        name: Effects requested
+        show_name: true
+        show_state: true
+        color: purple
+    sections:
+      - type: grid
+        background:
+          color: "#ff9800"
+          opacity: 7
+        cards:
+          - type: heading
+            heading: The portal
+            icon: mdi:ghost
+          - type: tile
+            entity: input_boolean.haunted_house_enabled
+            name: Haunted House
+            icon: mdi:halloween
+            color: orange
+            tap_action:
+              action: toggle
+            hold_action:
+              action: more-info
+            features:
+              - type: toggle
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: shortcut
+            label: Disarm
+            description: Stop accepting new effects
+            icon: mdi:shield-off-outline
+            color: red
+            tap_action:
+              action: perform-action
+              perform_action: script.haunted_house_disarm
+            grid_options:
+              columns: full
+          - type: markdown
+            entity_id:
+              - input_boolean.haunted_house_enabled
+            content: >-
+              {% if is_state('input_boolean.haunted_house_enabled', 'on') %}
+              **The portal is armed.** Normal effects follow your enabled room
+              automations, Preview setting, schedule and cooldown.
+              {% else %}
+              **The portal is closed.** Arm Haunted House when you are ready.
+              {% endif %}
+            grid_options:
+              columns: full
+          - type: tile
+            entity: input_boolean.haunted_house_respect_music
+            name: Respect music
+            icon: mdi:music-note-off-outline
+            tap_action:
+              action: toggle
+            features:
+              - type: toggle
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: markdown
+            content: |
+              New room automations start in **Preview** mode. Open the room automation's trace and inspect **haunted_house_result**. Preview bypasses automatic gates without changing audio, lights, helpers or cooldown. Turn Preview off in that room's blueprint settings when ready.
+            grid_options:
+              columns: full
+      - type: grid
+        background:
+          color: "#7c3aed"
+          opacity: 7
+        cards:
+          - type: heading
+            heading: When the shadows arrive
+            icon: mdi:clock-outline
+          - type: tile
+            entity: input_boolean.haunted_house_only_halloween
+            name: Only on October 31
+            icon: mdi:calendar-star
+            tap_action:
+              action: toggle
+            features:
+              - type: toggle
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: tile
+            entity: input_boolean.haunted_house_use_schedule
+            name: Use time window
+            icon: mdi:clock-check-outline
+            tap_action:
+              action: toggle
+            features:
+              - type: toggle
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: input_datetime.haunted_house_start
+                name: From
+              - entity: input_datetime.haunted_house_end
+                name: Until
+            grid_options:
+              columns: full
+          - type: markdown
+            content: |
+              Times use Home Assistant's local time zone. The time window can cross midnight; **Only on October 31** still limits effects to that calendar date.
+            grid_options:
+              columns: full
+      - type: grid
+        background:
+          color: "#7c3aed"
+          opacity: 7
+        cards:
+          - type: heading
+            heading: Direct the fright
+            icon: mdi:tune-variant
+          - type: tile
+            entity: input_select.haunted_house_atmosphere
+            name: Atmosphere
+            icon: mdi:weather-night
+            features:
+              - type: select-options
+                style: dropdown
+            features_position: bottom
+            grid_options:
+              columns: full
+          - type: tile
+            entity: input_number.haunted_house_probability
+            name: Chance per detection
+            icon: mdi:dice-multiple-outline
+            features:
+              - type: numeric-input
+                style: slider
+            grid_options:
+              columns: full
+          - type: tile
+            entity: input_number.haunted_house_cooldown
+            name: Cooldown per room
+            icon: mdi:timer-sand
+            features:
+              - type: numeric-input
+                style: slider
+            grid_options:
+              columns: full
+          - type: tile
+            entity: input_number.haunted_house_delay
+            name: Maximum random delay
+            icon: mdi:ghost-outline
+            features:
+              - type: numeric-input
+                style: slider
+            grid_options:
+              columns: full
+          - type: markdown
+            content: |
+              **Light**, **Classic** and **Intense** choose the sound pool. Lower the chance or increase the cooldown for less frequent surprises. Delay and cooldown are measured in **seconds**.
+            grid_options:
+              columns: full
+      - type: grid
+        background:
+          color: "#9c27b0"
+          opacity: 7
+        cards:
+          - type: heading
+            heading: Lights and atmosphere
+            icon: mdi:lightbulb-group-outline
+          - type: tile
+            entity: input_boolean.haunted_house_lights_enabled
+            name: Light effects
+            icon: mdi:lightbulb-on-outline
+            color: orange
+            tap_action:
+              action: toggle
+            features:
+              - type: toggle
+            features_position: inline
+            grid_options:
+              columns: full
+          - type: tile
+            entity: input_select.haunted_house_light_profile
+            name: Light profile
+            icon: mdi:palette-outline
+            features:
+              - type: select-options
+                style: dropdown
+            features_position: bottom
+            grid_options:
+              columns: full
+          - type: tile
+            entity: input_number.haunted_house_light_brightness
+            name: Effect brightness
+            icon: mdi:brightness-6
+            color: orange
+            features:
+              - type: numeric-input
+                style: slider
+            grid_options:
+              columns: full
+          - type: markdown
+            content: |
+              Each room chooses its own lights or light groups. **Match sound** chooses a profile for the selected sound; the other profiles stay fixed. Effects are brief, then the selected lights return to their previous states, including lights that were off.
+            grid_options:
+              columns: full
+      - type: grid
+        cards:
+          - type: heading
+            heading: Your rooms
+            icon: mdi:floor-plan
+          - type: markdown
+            content: |
+              Create **one automation per room** from the Haunted House blueprint. Choose the room name, sensor, speaker and optional lights in the UI.
+
+              To add an on/off control here, edit this dashboard, add a **Tile** card, and select that room's **automation entity**. Repeat for every room you want. There is no fixed room list.
+
+              Use **Disarm** and let active effects finish before disabling or editing a room automation.
+            grid_options:
+              columns: full
+          - type: shortcut
+            label: Manage room automations
+            description: Add rooms or change their devices
+            icon: mdi:robot-outline
+            color: purple
+            tap_action:
+              action: navigate
+              navigation_path: /config/automation/dashboard
+            grid_options:
+              columns: full
+      - type: grid
+        cards:
+          - type: heading
+            heading: Footprints in the dark
+            icon: mdi:history
+          - type: markdown
+            entity_id:
+              - input_text.haunted_house_last_event
+            content: |
+              **Last event**
+
+              {{ states('input_text.haunted_house_last_event') if states('input_text.haunted_house_last_event') not in ['unknown', 'unavailable', ''] else 'No event yet.' }}
+            grid_options:
+              columns: full
+          - type: tile
+            entity: counter.haunted_house_effects
+            name: Effects requested
+            icon: mdi:ghost-outline
+            color: orange
+            grid_options:
+              columns: full
+          - type: shortcut
+            label: Restore defaults
+            description: Reset the Haunted House controls
+            icon: mdi:backup-restore
+            tap_action:
+              action: perform-action
+              perform_action: script.haunted_house_reset_defaults
+              confirmation:
+                text: Restore the Haunted House controls to their default values?
+            grid_options:
+              columns: full
+          - type: markdown
+            content: |
+              The counter records effects **requested**, not proof that a speaker played them. Preview does not change this counter or the last event; inspect **haunted_house_result** in the room automation's trace instead.
+            grid_options:
+              columns: full

@@ -1,0 +1,101 @@
+[
+  {
+    "id": "wood_creak",
+    "label_en": "Wood creak",
+    "label": "Scricchiolio del legno",
+    "path": "wood/squeaks/squeaks_01",
+    "soundbank": "soundbank://soundlibrary/wood/squeaks/squeaks_01",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/wood/squeaks/squeaks_01.mp3",
+    "duration": 2.01,
+    "official_name": "Squeaks (1)",
+    "level": 1
+  },
+  {
+    "id": "wooden_door",
+    "label_en": "Creaking wooden door",
+    "label": "Porta che scricchiola",
+    "path": "foley/amzn_sfx_wooden_door_creaks_long_01",
+    "soundbank": "soundbank://soundlibrary/foley/amzn_sfx_wooden_door_creaks_long_01",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/foley/amzn_sfx_wooden_door_creaks_long_01.mp3",
+    "duration": 2.33,
+    "official_name": "Wooden Door Creaks Long (1)",
+    "level": 1
+  },
+  {
+    "id": "distant_footsteps",
+    "label_en": "Distant footsteps",
+    "label": "Passi lontani",
+    "path": "home/amzn_sfx_footsteps_muffled_02",
+    "soundbank": "soundbank://soundlibrary/home/amzn_sfx_footsteps_muffled_02",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/home/amzn_sfx_footsteps_muffled_02.mp3",
+    "duration": 3.66,
+    "official_name": "Footsteps Muffled (2)",
+    "level": 1
+  },
+  {
+    "id": "wolf_howl",
+    "label_en": "Wolf howl",
+    "label": "Ululato del lupo",
+    "path": "animals/amzn_sfx_wolf_howl_01",
+    "soundbank": "soundbank://soundlibrary/animals/amzn_sfx_wolf_howl_01",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/animals/amzn_sfx_wolf_howl_01.mp3",
+    "duration": 1.97,
+    "official_name": "Wolf Howl (1)",
+    "level": 2
+  },
+  {
+    "id": "ghost",
+    "label_en": "Ghost",
+    "label": "Fantasma",
+    "path": "magic/amzn_sfx_ghost_spooky_01",
+    "soundbank": "soundbank://soundlibrary/magic/amzn_sfx_ghost_spooky_01",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/magic/amzn_sfx_ghost_spooky_01.mp3",
+    "duration": 2.11,
+    "official_name": "Ghost Spooky (1)",
+    "level": 2
+  },
+  {
+    "id": "ghosts_demons",
+    "label_en": "Ghosts and demons",
+    "label": "Presenza demoniaca",
+    "path": "monsters/ghosts_demons/ghosts_demons_03",
+    "soundbank": "soundbank://soundlibrary/monsters/ghosts_demons/ghosts_demons_03",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/monsters/ghosts_demons/ghosts_demons_03.mp3",
+    "duration": 4.02,
+    "official_name": "Ghosts Demons (3)",
+    "level": 3
+  },
+  {
+    "id": "whistling_wind",
+    "label_en": "Whistling wind",
+    "label": "Vento che fischia",
+    "path": "nature/amzn_sfx_strong_wind_whistling_01",
+    "soundbank": "soundbank://soundlibrary/nature/amzn_sfx_strong_wind_whistling_01",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/nature/amzn_sfx_strong_wind_whistling_01.mp3",
+    "duration": 3.77,
+    "official_name": "Strong Wind Whistling (1)",
+    "level": 1
+  },
+  {
+    "id": "thunder_rumble",
+    "label_en": "Distant thunder",
+    "label": "Tuono lontano",
+    "path": "nature/amzn_sfx_thunder_rumble_01",
+    "soundbank": "soundbank://soundlibrary/nature/amzn_sfx_thunder_rumble_01",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/nature/amzn_sfx_thunder_rumble_01.mp3",
+    "duration": 4.16,
+    "official_name": "Thunder Rumble (1)",
+    "level": 2
+  },
+  {
+    "id": "squeaky_door",
+    "label_en": "Squeaky door",
+    "label": "Porta inquietante",
+    "path": "doors/doors_squeaky/squeaky_13",
+    "soundbank": "soundbank://soundlibrary/doors/doors_squeaky/squeaky_13",
+    "url": "https://d3qhmae9zx9eb.cloudfront.net/doors/doors_squeaky/squeaky_13.mp3",
+    "duration": 4.99,
+    "official_name": "Squeaky (13)",
+    "level": 3
+  }
+]

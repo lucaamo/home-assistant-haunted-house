@@ -1,0 +1,162 @@
+blueprint:
+  name: Haunted House · A room comes alive
+  description: >-
+    Random spooky audio and gentle light effects when someone enters a room.
+    Install the Haunted House package first. Create one automation per room.
+    Starts in silent preview: check the automation trace, then turn preview off.
+    Run actions performs a manual test (bypasses time, date, presence, chance and
+    master), but still respects silent preview and the global light switch.
+    Keep each speaker and each light owned by only one room automation.
+  domain: automation
+  author: lucaamo
+  source_url: https://github.com/lucaamo/home-assistant-haunted-house/blob/main/blueprints/automation/haunted_house/room.yaml
+  homeassistant:
+    min_version: "2026.10.2"
+  input:
+    room:
+      name: Room and presence
+      icon: mdi:home-map-marker
+      input:
+        room_name:
+          name: Room name
+          description: A label for the diary; the automation name can be chosen separately.
+          selector:
+            text: {}
+        sensors:
+          name: Presence or movement sensors
+          description: Select one or more sensors of the same kind for this room.
+          selector:
+            entity:
+              filter:
+                domain: binary_sensor
+                device_class: [motion, occupancy]
+              multiple: true
+        sensor_kind:
+          name: Kind of detection
+          default: motion.detected
+          selector:
+            select:
+              options:
+                - label: Movement (motion)
+                  value: motion.detected
+                - label: Presence (occupancy)
+                  value: occupancy.detected
+    audio:
+      name: Audio
+      icon: mdi:speaker
+      input:
+        player:
+          name: Speaker
+          selector:
+            entity:
+              filter:
+                domain: media_player
+        backend:
+          name: Audio integration
+          default: sonos
+          selector:
+            select:
+              options:
+                - label: Alexa Media Player (custom integration)
+                  value: alexa
+                - label: Sonos (announcement)
+                  value: sonos
+                - label: Other media player (device dependent)
+                  value: generic
+        volume:
+          name: Effect volume
+          default: 25
+          selector:
+            number:
+              min: 0
+              max: 100
+              unit_of_measurement: "%"
+    lights_section:
+      name: Lights and commissioning
+      icon: mdi:lightbulb-group
+      input:
+        lights:
+          name: Lights or light groups (optional)
+          description: Color and dimmable lights supported. On/off-only targets are skipped.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: light
+              multiple: true
+        preview:
+          name: Silent preview
+          description: >-
+            Returns a plan in the trace, before all automatic gates and before
+            changing devices, scenes, helpers or cooldown. Turn off to activate.
+          default: true
+          selector:
+            boolean: {}
+        controller:
+          name: Package controller
+          description: Choose Haunted House · Effect controller (script.haunted_house_effect).
+          selector:
+            entity:
+              filter:
+                domain: script
+    advanced:
+      name: Advanced audio (optional)
+      icon: mdi:cog
+      collapsed: true
+      input:
+        media_urls:
+          name: Custom audio URLs
+          description: >-
+            Sonos/generic only. HTTP(S) or media-source URLs for files you may use.
+            Empty uses the built-in catalogue. Alexa uses its soundbank catalogue.
+          default: []
+          selector:
+            text:
+              multiple: true
+        custom_duration:
+          name: Custom audio duration / playback hold
+          description: Set at least the length of your longest file; generic playback stops after this plus 2 seconds.
+          default: 8
+          selector:
+            number:
+              min: 1
+              max: 120
+              unit_of_measurement: s
+        memory:
+          name: Optional last-sound memory
+          description: >-
+            Select zero or one input_text helper, dedicated to this room, with
+            enough maximum length for sound IDs/URLs. Prevents an immediate
+            repeat when more than one sound is available. Empty is stateless.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: input_text
+              multiple: true
+
+mode: single
+max_exceeded: silent
+triggers:
+  - trigger: !input sensor_kind
+    target:
+      entity_id: !input sensors
+    options:
+      behavior: first
+conditions: []
+actions:
+  - action: !input controller
+    data:
+      room_name: !input room_name
+      room_key: "{{ this.entity_id }}"
+      sensors: !input sensors
+      player: !input player
+      backend: !input backend
+      lights: !input lights
+      volume: !input volume
+      preview: !input preview
+      media_urls: !input media_urls
+      custom_duration: !input custom_duration
+      memory: !input memory
+      manual: "{{ trigger is not defined or trigger is none or trigger.get('platform') is none }}"
+    response_variable: haunted_house_result

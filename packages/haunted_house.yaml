@@ -1,0 +1,806 @@
+# Haunted House 0.1.0-beta.1 · Home Assistant >= 2026.10.2
+# Install once as a package. Room/device selection is in the room blueprint.
+# No recordings or credentials are included. See README and docs/AUDIO.md.
+---
+input_boolean:
+  haunted_house_enabled:
+    name: Haunted House · Enabled
+    icon: mdi:halloween
+  haunted_house_use_schedule:
+    name: Haunted House · Use time window
+    icon: mdi:clock-outline
+  haunted_house_only_halloween:
+    name: Haunted House · Only October 31
+    icon: mdi:calendar
+  haunted_house_respect_music:
+    name: Haunted House · Respect music
+    icon: mdi:music-note
+  haunted_house_lights_enabled:
+    name: Haunted House · Light effects
+    icon: mdi:lightbulb-group
+  haunted_house_initialized:
+    name: Haunted House · Defaults initialized
+    icon: mdi:check-circle
+input_datetime:
+  haunted_house_start:
+    name: Haunted House · Start
+    has_date: false
+    has_time: true
+  haunted_house_end:
+    name: Haunted House · End
+    has_date: false
+    has_time: true
+input_number:
+  haunted_house_probability:
+    name: Haunted House · Chance
+    min: 0
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: slider
+  haunted_house_cooldown:
+    name: Haunted House · Room cooldown
+    min: 0
+    max: 3600
+    step: 1
+    unit_of_measurement: s
+    mode: slider
+  haunted_house_delay:
+    name: Haunted House · Maximum random delay
+    min: 0
+    max: 60
+    step: 1
+    unit_of_measurement: s
+    mode: slider
+  haunted_house_light_brightness:
+    name: Haunted House · Light peak brightness
+    min: 5
+    max: 70
+    step: 1
+    unit_of_measurement: "%"
+    mode: slider
+input_select:
+  haunted_house_atmosphere:
+    name: Haunted House · Atmosphere
+    options:
+    - Light
+    - Classic
+    - Intense
+  haunted_house_light_profile:
+    name: Haunted House · Light profile
+    options:
+    - Match sound
+    - Violet breath
+    - Haunted pumpkin
+    - Apparition
+input_text:
+  haunted_house_last_event:
+    name: Haunted House · Last event
+    max: 255
+counter:
+  haunted_house_effects:
+    name: Haunted House · Effects requested
+    initial: 0
+    step: 1
+    restore: true
+script:
+  haunted_house_reset_defaults:
+    alias: Haunted House · Reset defaults (disarms)
+    sequence:
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.haunted_house_enabled
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.haunted_house_use_schedule
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.haunted_house_only_halloween
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.haunted_house_respect_music
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.haunted_house_lights_enabled
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.haunted_house_probability
+      data:
+        value: 100
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.haunted_house_cooldown
+      data:
+        value: 300
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.haunted_house_delay
+      data:
+        value: 4
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.haunted_house_light_brightness
+      data:
+        value: 35
+    - action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.haunted_house_start
+      data:
+        time: '18:00:00'
+    - action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.haunted_house_end
+      data:
+        time: '23:00:00'
+    - action: input_select.select_option
+      target:
+        entity_id: input_select.haunted_house_atmosphere
+      data:
+        option: Classic
+    - action: input_select.select_option
+      target:
+        entity_id: input_select.haunted_house_light_profile
+      data:
+        option: Match sound
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.haunted_house_initialized
+    mode: single
+    icon: mdi:restore
+  haunted_house_disarm:
+    alias: Haunted House · Disarm
+    sequence:
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.haunted_house_enabled
+    mode: single
+    icon: mdi:shield-off
+  haunted_house_light_effect:
+    alias: Haunted House · Light effect
+    sequence:
+    - variables:
+        lights: "{{ lights | default([]) }}"
+        preview: "{{ preview | default(true) | bool }}"
+        key: "{{ room_key | lower | regex_replace('[^a-z0-9_]', '_') }}"
+        snapshot_id: "{{ 'haunted_house_lights_' ~ key }}"
+        profiles:
+          Violet breath:
+            high:
+            - 115
+            - 0
+            - 255
+            low:
+            - 200
+            - 0
+            - 255
+            ratio: 0.2
+          Haunted pumpkin:
+            high:
+            - 255
+            - 65
+            - 0
+            low:
+            - 255
+            - 12
+            - 0
+            ratio: 0.35
+          Apparition:
+            high:
+            - 110
+            - 190
+            - 255
+            low:
+            - 105
+            - 20
+            - 255
+            ratio: 0.18
+        palette: '{{ profiles.get(profile, profiles["Violet breath"]) }}'
+        peak: "{{ [70, [5, brightness | int(35)] | max] | min }}"
+        low: "{{ [4, (peak | float * palette.ratio) | round(0) | int] | max }}"
+        length: "{{ [8, [5, duration | float(6)] | max] | min }}"
+        cycles: "{{ 3 if length | float >= 6.5 else 2 }}"
+        half: "{{ length | float / (cycles | int * 2) }}"
+        snapshot_info: |-
+          {% set ns = namespace(queue=lights, seen=[], leaves=[]) %}
+          {% for depth in range(8) %}
+            {% set next = namespace(ids=[]) %}
+            {% for e in ns.queue %}
+              {% if e not in ns.seen %}
+                {% set ns.seen = ns.seen + [e] %}
+                {% set members = state_attr(e, 'entity_id') or state_attr(e, 'group_entities') or [] %}
+                {% if members %}{% set next.ids = next.ids + (members | list) %}
+                {% elif e.startswith('light.') and states(e) in ['on','off'] %}
+                  {% set ns.leaves = ns.leaves + [e] %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {% set ns.queue = next.ids %}
+          {% endfor %}
+          {{ {'leaves': ns.leaves | unique | list, 'unresolved': ns.queue} }}
+        leaves: "{{ snapshot_info.leaves }}"
+        color_targets: >-
+          {% set ns = namespace(ids=[]) %}{% for e in lights %}{% set modes = state_attr(e, 'supported_color_modes') or []
+          %}{% if has_value(e) and ('xy' in modes or 'hs' in modes or 'rgb' in modes or 'rgbw' in modes or 'rgbww' in modes)
+          %}{% set ns.ids = ns.ids + [e] %}{% endif %}{% endfor %}{{ ns.ids | unique | list }}
+        white_targets: >-
+          {% set ns = namespace(ids=[]) %}{% for e in lights %}{% set modes = state_attr(e, 'supported_color_modes') or []
+          %}{% if has_value(e) and (('xy' in modes or 'hs' in modes or 'rgb' in modes or 'rgbw' in modes or 'rgbww' in modes)
+          == false and ('brightness' in modes or 'color_temp' in modes or 'white' in modes)) %}{% set ns.ids = ns.ids + [e]
+          %}{% endif %}{% endfor %}{{ ns.ids | unique | list }}
+        reset_effects: >-
+          {% set ns = namespace(ids=[]) %}{% for e in leaves %}{% if 'off' in (state_attr(e, 'effect_list') or []) %}{% set
+          ns.ids = ns.ids + [e] %}{% endif %}{% endfor %}{{ ns.ids }}
+    - if:
+      - condition: template
+        value_template: "{{ preview }}"
+      then:
+      - variables:
+          result:
+            status: preview
+            controls: "{{ lights }}"
+            snapshot_entities: "{{ leaves }}"
+            color_targets: "{{ color_targets }}"
+            white_targets: "{{ white_targets }}"
+            unresolved_groups: "{{ snapshot_info.unresolved }}"
+            scene_id: "{{ snapshot_id }}"
+      - stop: 'Preview: no light or scene was changed'
+        response_variable: result
+    - condition: state
+      entity_id: input_boolean.haunted_house_lights_enabled
+      state: 'on'
+    - condition: template
+      value_template: >-
+        {{ leaves | length > 0 and snapshot_info.unresolved | length == 0 and (color_targets | length + white_targets | length)
+        > 0 }}
+    - action: scene.create
+      data:
+        scene_id: "{{ snapshot_id }}"
+        snapshot_entities: "{{ leaves }}"
+    - if:
+      - condition: template
+        value_template: "{{ reset_effects | length > 0 }}"
+      then:
+      - action: light.turn_on
+        continue_on_error: true
+        target:
+          entity_id: "{{ reset_effects }}"
+        data:
+          effect: 'off'
+    - repeat:
+        count: "{{ cycles | int }}"
+        sequence:
+        - if:
+          - condition: template
+            value_template: "{{ color_targets | length > 0 }}"
+          then:
+          - action: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id: "{{ color_targets }}"
+            data:
+              brightness_pct: "{{ peak | int }}"
+              rgb_color: "{{ palette.high }}"
+              transition: "{{ half | float * 0.85 }}"
+        - if:
+          - condition: template
+            value_template: "{{ white_targets | length > 0 }}"
+          then:
+          - action: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id: "{{ white_targets }}"
+            data:
+              brightness_pct: "{{ peak | int }}"
+              transition: "{{ half | float * 0.85 }}"
+        - delay:
+            seconds: "{{ half | float }}"
+        - if:
+          - condition: template
+            value_template: "{{ color_targets | length > 0 }}"
+          then:
+          - action: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id: "{{ color_targets }}"
+            data:
+              brightness_pct: "{{ low | int }}"
+              rgb_color: "{{ palette.low }}"
+              transition: "{{ half | float * 0.85 }}"
+        - if:
+          - condition: template
+            value_template: "{{ white_targets | length > 0 }}"
+          then:
+          - action: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id: "{{ white_targets }}"
+            data:
+              brightness_pct: "{{ low | int }}"
+              transition: "{{ half | float * 0.85 }}"
+        - delay:
+            seconds: "{{ half | float }}"
+    - action: scene.turn_on
+      target:
+        entity_id: "{{ 'scene.' ~ snapshot_id }}"
+      data:
+        transition: 1
+    - delay:
+        seconds: 1.1
+    mode: parallel
+    max: 30
+    max_exceeded: warning
+    description: >-
+      Commands selected lights/groups; snapshots available leaves individually. Master disarm lets cleanup finish. Never stop/reload
+      while running.
+  haunted_house_effect:
+    alias: Haunted House · Effect controller
+    sequence:
+    - variables:
+        room_name: '{{ room_name | default("Room") }}'
+        room_key: '{{ room_key | default("manual_preview") }}'
+        sensors: "{{ sensors | default([]) }}"
+        lights: "{{ lights | default([]) }}"
+        player: '{{ player | default("") }}'
+        backend: '{{ backend | default("generic") }}'
+        preview: "{{ preview | default(true) | bool }}"
+        manual: "{{ manual | default(false) | bool }}"
+        volume: "{{ [100, [0, volume | default(25) | int(25)] | max] | min }}"
+        media_urls: "{{ media_urls | default([]) }}"
+        custom_duration: "{{ [120, [1, custom_duration | default(8) | float(8)] | max] | min }}"
+        memory: "{{ memory | default([]) }}"
+        level: "{{ {'Light':1, 'Classic':2, 'Intense':3}.get(states('input_select.haunted_house_atmosphere'), 2) }}"
+        catalogue:
+        - id: wood_creak
+          label_en: Wood creak
+          label: Wood creak
+          path: wood/squeaks/squeaks_01
+          soundbank: soundbank://soundlibrary/wood/squeaks/squeaks_01
+          url: https://d3qhmae9zx9eb.cloudfront.net/wood/squeaks/squeaks_01.mp3
+          duration: 2.01
+          official_name: Squeaks (1)
+          level: 1
+        - id: wooden_door
+          label_en: Creaking wooden door
+          label: Creaking wooden door
+          path: foley/amzn_sfx_wooden_door_creaks_long_01
+          soundbank: soundbank://soundlibrary/foley/amzn_sfx_wooden_door_creaks_long_01
+          url: https://d3qhmae9zx9eb.cloudfront.net/foley/amzn_sfx_wooden_door_creaks_long_01.mp3
+          duration: 2.33
+          official_name: Wooden Door Creaks Long (1)
+          level: 1
+        - id: distant_footsteps
+          label_en: Distant footsteps
+          label: Distant footsteps
+          path: home/amzn_sfx_footsteps_muffled_02
+          soundbank: soundbank://soundlibrary/home/amzn_sfx_footsteps_muffled_02
+          url: https://d3qhmae9zx9eb.cloudfront.net/home/amzn_sfx_footsteps_muffled_02.mp3
+          duration: 3.66
+          official_name: Footsteps Muffled (2)
+          level: 1
+        - id: wolf_howl
+          label_en: Wolf howl
+          label: Wolf howl
+          path: animals/amzn_sfx_wolf_howl_01
+          soundbank: soundbank://soundlibrary/animals/amzn_sfx_wolf_howl_01
+          url: https://d3qhmae9zx9eb.cloudfront.net/animals/amzn_sfx_wolf_howl_01.mp3
+          duration: 1.97
+          official_name: Wolf Howl (1)
+          level: 2
+        - id: ghost
+          label_en: Ghost
+          label: Ghost
+          path: magic/amzn_sfx_ghost_spooky_01
+          soundbank: soundbank://soundlibrary/magic/amzn_sfx_ghost_spooky_01
+          url: https://d3qhmae9zx9eb.cloudfront.net/magic/amzn_sfx_ghost_spooky_01.mp3
+          duration: 2.11
+          official_name: Ghost Spooky (1)
+          level: 2
+        - id: ghosts_demons
+          label_en: Ghosts and demons
+          label: Ghosts and demons
+          path: monsters/ghosts_demons/ghosts_demons_03
+          soundbank: soundbank://soundlibrary/monsters/ghosts_demons/ghosts_demons_03
+          url: https://d3qhmae9zx9eb.cloudfront.net/monsters/ghosts_demons/ghosts_demons_03.mp3
+          duration: 4.02
+          official_name: Ghosts Demons (3)
+          level: 3
+        - id: whistling_wind
+          label_en: Whistling wind
+          label: Whistling wind
+          path: nature/amzn_sfx_strong_wind_whistling_01
+          soundbank: soundbank://soundlibrary/nature/amzn_sfx_strong_wind_whistling_01
+          url: https://d3qhmae9zx9eb.cloudfront.net/nature/amzn_sfx_strong_wind_whistling_01.mp3
+          duration: 3.77
+          official_name: Strong Wind Whistling (1)
+          level: 1
+        - id: thunder_rumble
+          label_en: Distant thunder
+          label: Distant thunder
+          path: nature/amzn_sfx_thunder_rumble_01
+          soundbank: soundbank://soundlibrary/nature/amzn_sfx_thunder_rumble_01
+          url: https://d3qhmae9zx9eb.cloudfront.net/nature/amzn_sfx_thunder_rumble_01.mp3
+          duration: 4.16
+          official_name: Thunder Rumble (1)
+          level: 2
+        - id: squeaky_door
+          label_en: Squeaky door
+          label: Squeaky door
+          path: doors/doors_squeaky/squeaky_13
+          soundbank: soundbank://soundlibrary/doors/doors_squeaky/squeaky_13
+          url: https://d3qhmae9zx9eb.cloudfront.net/doors/doors_squeaky/squeaky_13.mp3
+          duration: 4.99
+          official_name: Squeaky (13)
+          level: 3
+        previous: '{{ states(memory[0]) if memory | length > 0 else "" }}'
+        candidates: >-
+          {% if media_urls | length > 0 and backend != 'alexa' %}{% set ns = namespace(s=[]) %}{% for u in media_urls %}{%
+          set ns.s = ns.s + [{'id':u, 'label':'Custom ' ~ loop.index, 'url':u, 'duration':custom_duration, 'level':1}] %}{%
+          endfor %}{{ ns.s }}{% else %}{{ catalogue | selectattr('level', 'le', level | int) | list }}{% endif %}
+        pool: '{{ candidates | rejectattr("id", "eq", previous) | list }}'
+        sound: "{{ (pool if pool | length > 0 else candidates) | random }}"
+        profile_selection: "{{ states('input_select.haunted_house_light_profile') }}"
+        profile: >-
+          {{ profile_selection if profile_selection in ['Violet breath','Haunted pumpkin','Apparition'] else ('Apparition'
+          if sound.id in ['ghost','ghosts_demons','thunder_rumble'] else ('Violet breath' if sound.id in ['wolf_howl','whistling_wind']
+          else 'Haunted pumpkin')) }}
+        light_length: "{{ [8, [5, sound.duration | float(3) + 3] | max] | min }}"
+        key: "{{ room_key | lower | regex_replace('[^a-z0-9_]', '_') }}"
+        audio_snapshot: "{{ 'haunted_house_audio_' ~ key }}"
+        known_volume: '{{ is_number(state_attr(player, "volume_level")) }}'
+    - if:
+      - condition: template
+        value_template: >-
+          {{ backend not in ['alexa','sonos','generic'] or not player.startswith('media_player.') or not room_key or memory
+          | length > 1 }}
+      then:
+      - variables:
+          result:
+            status: invalid
+            reason: Check backend, player, room key and memory helper
+      - stop: Check backend, player, room key and memory helper
+        response_variable: result
+    - if:
+      - condition: template
+        value_template: "{{ preview }}"
+      then:
+      - variables:
+          result:
+            status: preview
+            room: "{{ room_name }}"
+            room_key: "{{ room_key }}"
+            player: "{{ player }}"
+            backend: "{{ backend }}"
+            available: "{{ has_value(player) }}"
+            sound: "{{ sound }}"
+            lights: "{{ lights }}"
+            profile: "{{ profile }}"
+            volume: "{{ volume }}"
+            known_volume: "{{ known_volume }}"
+            manual: "{{ manual }}"
+            audio_scene_id: "{{ audio_snapshot }}"
+      - stop: 'Preview: no devices, helpers or cooldown were changed; gates were not applied'
+        response_variable: result
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: "{{ manual }}"
+      - condition: and
+        conditions:
+        - condition: state
+          entity_id: input_boolean.haunted_house_initialized
+          state: 'on'
+        - condition: state
+          entity_id: input_boolean.haunted_house_enabled
+          state: 'on'
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: input_boolean.haunted_house_use_schedule
+            state: 'off'
+          - condition: time
+            after: input_datetime.haunted_house_start
+            before: input_datetime.haunted_house_end
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: input_boolean.haunted_house_only_halloween
+            state: 'off'
+          - condition: template
+            value_template: "{{ now().month == 10 and now().day == 31 }}"
+        - condition: template
+          value_template: "{{ sensors | select('is_state', 'on') | list | length > 0 }}"
+        - condition: template
+          value_template: >-
+            {{ backend == 'sonos' or not is_state('input_boolean.haunted_house_respect_music', 'on') or not is_state(player,
+            'playing') }}
+    - condition: template
+      value_template: "{{ manual or range(1, 101) | random <= states('input_number.haunted_house_probability') | int(0) }}"
+    - variables:
+        wait_seconds: "{{ 0 if manual else range(0, (states('input_number.haunted_house_delay') | int(0)) + 1) | random }}"
+    - if:
+      - condition: template
+        value_template: "{{ wait_seconds | int > 0 }}"
+      then:
+      - wait_template: "{{ not is_state('input_boolean.haunted_house_enabled','on') or sensors | select('is_state','on') |
+          list | length == 0 }}"
+        timeout:
+          seconds: "{{ wait_seconds | int }}"
+        continue_on_timeout: true
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: "{{ manual }}"
+      - condition: and
+        conditions:
+        - condition: state
+          entity_id: input_boolean.haunted_house_initialized
+          state: 'on'
+        - condition: state
+          entity_id: input_boolean.haunted_house_enabled
+          state: 'on'
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: input_boolean.haunted_house_use_schedule
+            state: 'off'
+          - condition: time
+            after: input_datetime.haunted_house_start
+            before: input_datetime.haunted_house_end
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: input_boolean.haunted_house_only_halloween
+            state: 'off'
+          - condition: template
+            value_template: "{{ now().month == 10 and now().day == 31 }}"
+        - condition: template
+          value_template: "{{ sensors | select('is_state', 'on') | list | length > 0 }}"
+        - condition: template
+          value_template: >-
+            {{ backend == 'sonos' or not is_state('input_boolean.haunted_house_respect_music', 'on') or not is_state(player,
+            'playing') }}
+    - if:
+      - condition: template
+        value_template: "{{ not has_value(player) }}"
+      then:
+      - variables:
+          result:
+            status: unavailable
+            reason: Player unavailable; no audio or lights were sent
+      - stop: Player unavailable; no audio or lights were sent
+        response_variable: result
+    - parallel:
+      - sequence:
+        - choose:
+          - conditions:
+            - condition: template
+              value_template: "{{ backend == 'sonos' }}"
+            sequence:
+            - action: media_player.play_media
+              continue_on_error: true
+              target:
+                entity_id: "{{ player }}"
+              data:
+                media:
+                  media_content_id: "{{ sound.url }}"
+                  media_content_type: music
+                announce: true
+                extra:
+                  volume: "{{ volume | int }}"
+            - delay:
+                seconds: "{{ sound.duration | float + 2 }}"
+          default:
+          - if:
+            - condition: template
+              value_template: "{{ known_volume or backend == 'generic' }}"
+            then:
+            - action: scene.create
+              data:
+                scene_id: "{{ audio_snapshot }}"
+                snapshot_entities:
+                - "{{ player }}"
+          - if:
+            - condition: template
+              value_template: "{{ known_volume }}"
+            then:
+            - action: media_player.volume_set
+              continue_on_error: true
+              target:
+                entity_id: "{{ player }}"
+              data:
+                volume_level: "{{ volume | float / 100 }}"
+          - choose:
+            - conditions:
+              - condition: template
+                value_template: "{{ backend == 'alexa' }}"
+              sequence:
+              - action: notify.alexa_media
+                continue_on_error: true
+                data:
+                  target:
+                  - "{{ player }}"
+                  message: '{{ ''<audio src="'' ~ sound.soundbank ~ ''"/>'' }}'
+                  data:
+                    type: tts
+            default:
+            - action: media_player.play_media
+              continue_on_error: true
+              target:
+                entity_id: "{{ player }}"
+              data:
+                media:
+                  media_content_id: "{{ sound.url }}"
+                  media_content_type: music
+          - delay:
+              seconds: '{{ sound.duration | float + (5 if backend == "alexa" else 2) }}'
+          - if:
+            - condition: template
+              value_template: "{{ backend == 'generic' }}"
+            then:
+            - action: media_player.media_stop
+              continue_on_error: true
+              target:
+                entity_id: "{{ player }}"
+          - if:
+            - condition: template
+              value_template: "{{ known_volume or backend == 'generic' }}"
+            then:
+            - action: scene.turn_on
+              target:
+                entity_id: "{{ 'scene.' ~ audio_snapshot }}"
+      - sequence:
+        - if:
+          - condition: template
+            value_template: "{{ lights | length > 0 and is_state('input_boolean.haunted_house_lights_enabled','on') }}"
+          then:
+          - action: script.haunted_house_light_effect
+            continue_on_error: true
+            data:
+              room_key: "{{ room_key }}"
+              lights: "{{ lights }}"
+              profile: "{{ profile }}"
+              brightness: "{{ states('input_number.haunted_house_light_brightness') | int(35) }}"
+              duration: "{{ light_length }}"
+              preview: false
+    - if:
+      - condition: template
+        value_template: "{{ memory | length == 1 }}"
+      then:
+      - action: input_text.set_value
+        continue_on_error: true
+        target:
+          entity_id: "{{ memory[0] }}"
+        data:
+          value: "{{ sound.id }}"
+    - action: input_text.set_value
+      continue_on_error: true
+      target:
+        entity_id: input_text.haunted_house_last_event
+      data:
+        value: "{{ (now().strftime('%H:%M') ~ ' · ' ~ room_name ~ ' · ' ~ sound.label ~ (' · test' if manual else ''))[:255]
+          }}"
+    - if:
+      - condition: template
+        value_template: "{{ not manual }}"
+      then:
+      - action: counter.increment
+        target:
+          entity_id: counter.haunted_house_effects
+    - if:
+      - condition: template
+        value_template: "{{ not manual }}"
+      then:
+      - wait_template: "{{ not is_state('input_boolean.haunted_house_enabled', 'on') }}"
+        timeout:
+          seconds: "{{ states('input_number.haunted_house_cooldown') | int(300) }}"
+        continue_on_timeout: true
+    - variables:
+        result:
+          status: requested
+          room: "{{ room_name }}"
+          sound: "{{ sound.label }}"
+    - stop: Effect completed and cleanup attempted
+      response_variable: result
+    mode: parallel
+    max: 30
+    max_exceeded: warning
+    icon: mdi:ghost
+    description: >-
+      Public entry point for the room blueprint. One automation owns each player/light. Calls remain synchronous through cleanup
+      and room cooldown. Preview returns before any mutation.
+    fields:
+      room_name:
+        name: Room name
+        selector:
+          text: {}
+        default: Room
+      room_key:
+        name: Unique room key (automation entity ID)
+        selector:
+          text: {}
+        required: true
+      sensors:
+        name: Sensors
+        selector:
+          entity:
+            filter:
+              domain: binary_sensor
+            multiple: true
+        default: []
+      player:
+        name: Media player
+        selector:
+          entity:
+            filter:
+              domain: media_player
+        required: true
+      backend:
+        name: Audio backend
+        selector:
+          select:
+            options:
+            - alexa
+            - sonos
+            - generic
+        default: generic
+      lights:
+        name: Lights or groups
+        selector:
+          entity:
+            filter:
+              domain: light
+            multiple: true
+        default: []
+      volume:
+        name: Volume
+        selector:
+          number:
+            min: 0
+            max: 100
+            unit_of_measurement: "%"
+        default: 25
+      preview:
+        name: Silent preview
+        selector:
+          boolean: {}
+        default: true
+      manual:
+        name: Manual test bypasses automatic gates
+        selector:
+          boolean: {}
+        default: false
+      media_urls:
+        name: Custom audio URLs
+        selector:
+          text:
+            multiple: true
+        default: []
+      custom_duration:
+        name: Custom sound duration
+        selector:
+          number:
+            min: 1
+            max: 120
+            unit_of_measurement: s
+        default: 8
+      memory:
+        name: Optional one input_text for no immediate repeat
+        selector:
+          entity:
+            filter:
+              domain: input_text
+            multiple: true
+        default: []
+automation:
+- id: haunted_house_initialize
+  alias: Haunted House · Initialize defaults once
+  mode: single
+  triggers:
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: state
+    entity_id: input_boolean.haunted_house_initialized
+    state: 'off'
+  actions:
+  - action: script.haunted_house_reset_defaults

@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+.DS_Store
+.pytest_cache/
+*.log
+validation-local.json

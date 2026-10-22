@@ -1,0 +1,42 @@
+# Illustrative automation configurations, not an installer.
+# Replace every example entity with your own, or create these rooms in the blueprint UI.
+# Copy individual items into the existing automation list; do not replace that list.
+# Both rooms deliberately start with preview: true (no audio or light changes).
+- id: haunted_house_example_hall
+  alias: "Haunted House · Hall"
+  description: Example motion sensor, Alexa speaker and one light.
+  mode: single
+  use_blueprint:
+    path: haunted_house/room.yaml
+    input:
+      room_name: Hall
+      sensors:
+        - binary_sensor.hall_motion
+      sensor_kind: motion.detected
+      player: media_player.hall_echo
+      backend: alexa
+      lights:
+        - light.hall_lamp
+      volume: 25
+      controller: script.haunted_house_effect
+      preview: true
+      memory: []
+
+- id: haunted_house_example_study
+  alias: "Haunted House · Study"
+  description: Example occupancy sensor and Sonos speaker, without light effects.
+  mode: single
+  use_blueprint:
+    path: haunted_house/room.yaml
+    input:
+      room_name: Study
+      sensors:
+        - binary_sensor.study_occupancy
+      sensor_kind: occupancy.detected
+      player: media_player.study_speaker
+      backend: sonos
+      lights: []
+      volume: 25
+      controller: script.haunted_house_effect
+      preview: true
+      memory: []

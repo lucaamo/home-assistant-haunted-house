@@ -1,0 +1,22 @@
+name: Validate package and blueprint
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Install pinned Home Assistant validation dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Lint YAML, references, defaults and privacy
+        run: python tools/lint.py
+      - name: Test control flow and restoration contracts
+        run: python -m unittest discover -s tests -v
+      - name: Validate against Home Assistant schemas
+        run: python tools/validate_ha.py --json

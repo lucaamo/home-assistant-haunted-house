@@ -1,0 +1,2 @@
+# Home Assistant 2026.10.2 requires Python 3.14. No pip installation is needed in HA.
+homeassistant==2026.10.2

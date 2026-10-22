@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-22",
+  "home_assistant": "2026.10.2",
+  "remote_validation_only": true,
+  "installed_on_household_instance": false,
+  "actuator_calls": false,
+  "schema_checks": [
+    {
+      "id": "haunted_house_reset_defaults",
+      "result": {
+        "actions": {
+          "valid": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "haunted_house_disarm",
+      "result": {
+        "actions": {
+          "valid": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "haunted_house_light_effect",
+      "result": {
+        "actions": {
+          "valid": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "haunted_house_effect",
+      "result": {
+        "actions": {
+          "valid": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "initialization",
+      "result": {
+        "triggers": {
+          "valid": true,
+          "error": null
+        },
+        "conditions": {
+          "valid": true,
+          "error": null
+        },
+        "actions": {
+          "valid": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "motion.detected",
+      "result": {
+        "triggers": {
+          "valid": true,
+          "error": null
+        },
+        "conditions": {
+          "valid": true,
+          "error": null
+        },
+        "actions": {
+          "valid": true,
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "occupancy.detected",
+      "result": {
+        "triggers": {
+          "valid": true,
+          "error": null
+        },
+        "conditions": {
+          "valid": true,
+          "error": null
+        },
+        "actions": {
+          "valid": true,
+          "error": null
+        }
+      }
+    }
+  ],
+  "template_checks": {
+    "controller_native_render": "passed",
+    "light_group_native_render": "passed; group targets retained and available leaves snapshotted",
+    "manual_platform_none": true,
+    "custom_media_url": true
+  }
+}
